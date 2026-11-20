@@ -14,26 +14,22 @@ Portfolio interactif en 3D : on visite un salon en faisant défiler la page. Cha
 
 ```
 portfolio-simple/
-├── index.html            Page unique : sections de défilement et version texte accessible
+├── index.html           
 ├── css/
-│   └── style.css         Mise en page, navigation, icônes sociales
+│   └── style.css      
 ├── js/
-│   ├── data.js           Contenu : projets, parcours, compétences, liens (à modifier ici)
-│   ├── main.js           Scène 3D, parcours de la caméra, interactions
-│   └── photo.js          Photo encodée en base64 (voir plus bas)
+│   ├── data.js          
+│   ├── main.js          
+│   └── photo.js       
 ├── assets/
 │   ├── images/
-│   │   └── photo.jpg     Photo d'origine
+│   │   └── photo.jpg     
 │   └── docs/
 │       └── CV_Bienvenu_Cedrick_Bakary_Yapo.pdf
 ├── .editorconfig
 ├── .gitignore
 └── README.md
 ```
-
-## Mettre en ligne sur GitHub Pages
-
-
 
 ## Accessibilité
 
