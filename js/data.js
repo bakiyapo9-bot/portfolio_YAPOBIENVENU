@@ -1,9 +1,13 @@
-/* Contenu du portfolio : c'est le seul fichier à modifier pour changer les textes.
+/* Contenu du portfolio (repris du CV) : c'est le seul fichier à modifier pour changer les textes.
    La scène 3D (main.js) et la version texte pour lecteurs d'écran le lisent toutes les deux. */
 window.PORTFOLIO = {
+  nom: "Bienvenu Cedrick Bakary Yapo",
   github: "https://github.com/bakiyapo9-bot/",
   linkedin: "https://linkedin.com/in/bienvenu-cedrick-bakary",
   email: "bakiyapo9@gmail.com",
+  telephone: "01 73 36 83 92",
+  telephoneLien: "tel:+2250173368392",
+  ville: "Grand-Bassam, Côte d’Ivoire",
   cv: "assets/docs/CV_Bienvenu_Cedrick_Bakary_Yapo.pdf",
 
   // [titre, description, technologies, dépôt GitHub, couleur claire, couleur foncée]
@@ -17,27 +21,42 @@ window.PORTFOLIO = {
     ["Calculatrice scientifique", "Application de calcul scientifique.", "", "Calculatrice_Scientifique", "#0f7c8c", "#0a4f59"]
   ],
 
-  // [période, intitulé, lieu]
-  parcours: [
-    ["2026 à aujourd’hui", "Licence 2, génie logiciel", "Institut Ivoirien de Technologie, Grand-Bassam"],
-    ["2026", "Hackathon IIT, 1re place", "Équipe de 5, développeur front-end"],
-    ["2025 à 2026", "Licence 1, génie logiciel", "Institut Ivoirien de Technologie, Grand-Bassam"],
-    ["Juil. et août 2025", "Chroniqueur radio, stage", "Radio Bassam, Grand-Bassam"],
-    ["Juil. et août 2024", "Monteur vidéo, stage", "Conseil régional du Sud-Comoé"],
-    ["2024 à 2025", "Baccalauréat série C", "Lycée Moderne II de Grand-Bassam"]
-  ],
-
-  // [catégorie, détail]
+  // Compétences affichées sur l'écran du bureau : [rubrique, éléments, niveau (facultatif), couleur]
   competences: [
-    ["Langages", "C, Python, Java (intermédiaire)"],
-    ["Web", "HTML, CSS avec Bootstrap, JavaScript"],
-    ["Mobile", "Dart et Flutter"],
-    ["Bases de données", "SQL Server, MySQL (intermédiaire)"],
-    ["UI/UX", "Recherche utilisateur, wireframes, prototypes Figma"],
-    ["Outils", "Git et GitHub, VS Code, Code::Blocks, Figma"],
-    ["Langues", "Français courant, anglais intermédiaire"]
+    ["Langages de programmation", ["C", "Python", "Java"], "Intermédiaire", "#f77f00"],
+    ["Développement web", ["HTML", "CSS", "Bootstrap", "JavaScript"], "", "#1f5fbf"],
+    ["Développement mobile", ["Dart", "Flutter"], "", "#0a7ea4"],
+    ["Bases de données", ["SQL Server", "MySQL"], "Intermédiaire", "#8a1c2b"],
+    ["Design UI/UX", ["User Research", "Wireframing", "Prototypage"], "", "#c2407a"],
+    ["Outils et technologies", ["Git / GitHub", "VS Code", "Code::Blocks", "Figma"], "", "#24292f"],
+    ["Outils bureautiques", ["Word", "PowerPoint", "Excel"], "Word, PowerPoint : intermédiaire · Excel : basique", "#2b7a3d"],
+    ["Langues", ["Français", "Anglais"], "Français : courant · Anglais : intermédiaire", "#009e60"]
   ],
 
-  // Dossiers affichés sur l'écran du bureau
-  dossiers: ["HTML", "CSS", "JavaScript", "Bootstrap", "Python", "Java", "C", "Dart", "Flutter", "SQL", "Git", "Figma"]
+  // Télé, 1re partie : le projet (hackathon)
+  projet: {
+    titre: "Hackathon IIT 2026",
+    resultat: "Vainqueur · 1re place",
+    lieu: "Institut Ivoirien de Technologie, Grand-Bassam",
+    points: [
+      "Projet informatique conçu en équipe de 5 personnes",
+      "Travail sous contrainte de temps, avec des objectifs précis",
+      "Technologies : HTML, CSS, JavaScript, Python"
+    ],
+    role: "Rôle : développeur front-end",
+    depot: "github.com/bakiyapo9-bot/edu.ai"
+  },
+
+  // Télé, 2e partie : [poste, type, période, lieu, durée]
+  experiences: [
+    ["Chroniqueur radio", "Stage d’immersion", "Juil. – août 2025", "Radio Bassam, Grand-Bassam", "2 mois"],
+    ["Monteur vidéo", "Stage d’immersion", "Juil. – août 2024", "Conseil régional du Sud-Comoé, Grand-Bassam", "2 mois"]
+  ],
+
+  // [période, diplôme, établissement] (version texte uniquement)
+  formation: [
+    ["2026 – en cours", "Licence 2, Informatique / Génie logiciel", "Institut Ivoirien de Technologie, Grand-Bassam"],
+    ["2025 – 2026", "Licence 1, Informatique / Génie logiciel", "Institut Ivoirien de Technologie, Grand-Bassam"],
+    ["Sept. 2024 – juil. 2025", "Baccalauréat série C", "Lycée Moderne II de Grand-Bassam"]
+  ]
 };

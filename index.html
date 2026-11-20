@@ -37,7 +37,8 @@
     <button type="button" data-go="4" aria-label="Projets"></button>
     <button type="button" data-go="5" aria-label="Le fauteuil"></button>
     <button type="button" data-go="6" aria-label="Parcours"></button>
-    <button type="button" data-go="7" aria-label="Contact"></button>
+    <button type="button" data-go="7" aria-label="Le téléphone"></button>
+    <button type="button" data-go="8" aria-label="Contact"></button>
   </nav>
 
   <!-- Chaque section fait la hauteur de l'écran : le défilement déplace la caméra.
@@ -54,15 +55,15 @@
     <section class="s" aria-label="Présentation">
       <div class="panel">
         <h2>Présentation</h2>
-        <p>Je m’appelle Bienvenu Cedrick Bakary Yapo. Je suis un développeur web créatif et mobile.</p>
+        <p>Je suis Bienvenu Cedrick Bakary Yapo, étudiant en Licence de Génie Logiciel.</p>
       </div>
     </section>
 
     <!-- 2. Mur de droite : ma photo -->
     <section class="s" aria-label="À propos">
       <div class="panel">
-        <h2>À propos</h2>
-        <p>J’habite à Grand-Bassam, Côte d’Ivoire. Étudiant en Licence 2 de génie logiciel à l’IIT, vainqueur du Hackathon IIT 2026, je cherche un stage en développement web et mobile.</p>
+        <h2>Mon profil</h2>
+        <p>Motivé et sérieux, je recherche un stage pour mettre en pratique mes connaissances en programmation et en développement web et mobile. Grand-Bassam, Côte d’Ivoire.</p>
       </div>
     </section>
 
@@ -89,27 +90,44 @@
     <!-- 5. Assis dans le fauteuil -->
     <section class="s" aria-label="Le fauteuil">
       <div class="panel">
-        <p>On s’installe dans le fauteuil : mon parcours passe à la télé.</p>
+        <p>On s’installe dans le fauteuil : mon projet et mon expérience passent à la télé.</p>
       </div>
     </section>
 
-    <!-- 6. La télé : le parcours -->
+    <!-- 6. La télé : projet puis expérience professionnelle -->
     <section class="s" aria-label="Parcours">
       <div class="panel">
-        <h2>Parcours</h2>
-        <ul id="list-parcours"></ul>
+        <h2>Projet</h2>
+        <ul id="list-projet"></ul>
+        <h2>Expérience professionnelle</h2>
+        <ul id="list-experience"></ul>
+        <h2>Formation</h2>
+        <ul id="list-formation"></ul>
       </div>
     </section>
 
-    <!-- 7. Le téléphone sur le bureau : contact -->
+    <!-- 7. Le téléphone sur le bureau : réseaux -->
+    <section class="s" aria-label="Le téléphone">
+      <div class="panel">
+        <p>Sur le téléphone : LinkedIn, GitHub, e-mail et CV.</p>
+      </div>
+      <div class="hint">Touche une icône du téléphone</div>
+    </section>
+
+    <!-- 8. Le panneau Contact, à côté de la porte -->
     <section class="s" aria-label="Contact">
       <div class="panel">
         <h2>Contact</h2>
-        <p>Grand-Bassam, Côte d’Ivoire</p>
-        <a class="btn btn-dark" href="mailto:bakiyapo9@gmail.com">Écrire un e-mail</a>
+        <ul>
+          <li>Téléphone : <a href="tel:+2250173368392">01 73 36 83 92</a></li>
+          <li>E-mail : <a href="mailto:bakiyapo9@gmail.com">bakiyapo9@gmail.com</a></li>
+          <li>LinkedIn : <a href="https://linkedin.com/in/bienvenu-cedrick-bakary" target="_blank" rel="noopener">bienvenu-cedrick-bakary</a></li>
+          <li>GitHub : <a href="https://github.com/bakiyapo9-bot" target="_blank" rel="noopener">bakiyapo9-bot</a></li>
+          <li>Localisation : Grand-Bassam, Côte d’Ivoire</li>
+        </ul>
         <a class="btn btn-outline-dark" href="assets/docs/CV_Bienvenu_Cedrick_Bakary_Yapo.pdf" download>Télécharger mon CV</a>
       </div>
-      <div class="hint">Touche une icône du téléphone pour me joindre</div>
+      <div class="hint">Clique sur une carte pour me contacter</div>
     </section>
   </main>
 

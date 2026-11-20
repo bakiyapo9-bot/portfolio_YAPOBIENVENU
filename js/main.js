@@ -1,6 +1,6 @@
 /* Portfolio 3D de Bienvenu Cedrick Bakary Yapo
    HTML + Bootstrap + JavaScript + Three.js (r128).
-   Principe : la page fait 8 écrans de haut ; le défilement déplace la caméra dans le salon.
+   Principe : la page fait 9 écrans de haut ; le défilement déplace la caméra dans le salon.
    Le contenu (textes, projets, parcours) est dans js/data.js. */
 (function () {
   "use strict";
@@ -8,12 +8,13 @@
   var GH = D.github, CV = D.cv;
   var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   var S = { p: 0, mx: 0, my: 0, hv: null };
-  // 8 étapes : maison, nom, photo, bureau, projets, fauteuil, télé, téléphone
-  var STEP = { home: 0, name: 1, photo: 2, desk: 3, projects: 4, sofa: 5, tv: 6, phone: 7 };
-  var LAST = STEP.phone;
+  // 9 étapes : maison, nom, photo, bureau, projets, fauteuil, télé, téléphone, contact
+  var STEP = { home: 0, name: 1, photo: 2, desk: 3, projects: 4, sofa: 5, tv: 6, phone: 7, contact: 8 };
+  var LAST = STEP.contact;
+  var FONT = "Hanken Grotesk,Arial,sans-serif", DISPLAY = "Unbounded,Arial Black,sans-serif";
 
   /* ---------- Contenu ---------- */
-  var PERSO = D.perso, ACAD = D.acad, PARC = D.parcours, SK = D.competences;
+  var PERSO = D.perso, ACAD = D.acad, SK = D.competences, PJ = D.projet;
 
   /* ---------- Version texte (lecteurs d'écran) ---------- */
   function li(text, href) {
@@ -29,10 +30,12 @@
   }
   PERSO.forEach(function (p) { document.getElementById("list-perso").appendChild(li(p[0] + " : " + p[1], GH + p[3])); });
   ACAD.forEach(function (p) { document.getElementById("list-acad").appendChild(li(p[0] + " : " + p[1], GH + p[3])); });
-  PARC.forEach(function (p) { document.getElementById("list-parcours").appendChild(li(p[0] + " : " + p[1] + ", " + p[2])); });
+  document.getElementById("list-projet").appendChild(li(PJ.titre + ", " + PJ.resultat + " (" + PJ.lieu + "). " + PJ.points.join(". ") + ". " + PJ.role + ".", GH + "edu.ai"));
+  D.experiences.forEach(function (x) { document.getElementById("list-experience").appendChild(li(x[0] + ", " + x[1].toLowerCase() + " : " + x[2] + ", " + x[3] + " (" + x[4] + ")")); });
+  D.formation.forEach(function (p) { document.getElementById("list-formation").appendChild(li(p[0] + " : " + p[1] + ", " + p[2])); });
   SK.forEach(function (s) {
     var dl = document.getElementById("list-skills"), dt = document.createElement("dt"), dd = document.createElement("dd");
-    dt.textContent = s[0]; dd.textContent = s[1]; dl.appendChild(dt); dl.appendChild(dd);
+    dt.textContent = s[0]; dd.textContent = s[1].join(", ") + (s[2] ? " (" + s[2] + ")" : ""); dl.appendChild(dt); dl.appendChild(dd);
   });
 
   /* ---------- Défilement et navigation ---------- */
@@ -50,7 +53,7 @@
 
   function openLink(url) {
     if (url === "cv") window.open(CV, "_blank");
-    else if (url.indexOf("mailto:") === 0) location.href = url;
+    else if (/^(mailto|tel):/.test(url)) location.href = url;
     else window.open(url, "_blank", "noopener");
   }
 
@@ -82,20 +85,33 @@
     return k;
   }
   function B(w, hh, d, m, x, y, z, o) { return put(new T.BoxGeometry(w, hh, d), m, x, y, z, o); }
-  // Texture dessinée en Canvas 2D ; redraw() la redessine (horloge, télé, polices chargées)
-  function tex(w, hh, draw) {
-    var c = document.createElement("canvas"); c.width = w; c.height = hh;
-    var x = c.getContext("2d"); draw(x, w, hh);
-    var t = new T.CanvasTexture(c); t.encoding = T.sRGBEncoding; t.anisotropy = 4;
-    t.redraw = function () { draw(x, w, hh); t.needsUpdate = true; };
+  // Texture dessinée en Canvas 2D ; redraw() la redessine (horloge, télé, polices chargées).
+  // « hd » multiplie la résolution réelle du canvas : le dessin garde ses coordonnées (w, hh),
+  // mais le texte est rendu avec plus de pixels, donc net de près.
+  var ANISO = r.capabilities.getMaxAnisotropy();
+  function tex(w, hh, draw, hd) {
+    hd = hd || 1;
+    var c = document.createElement("canvas"); c.width = Math.round(w * hd); c.height = Math.round(hh * hd);
+    var x = c.getContext("2d");
+    function paint() { x.setTransform(hd, 0, 0, hd, 0, 0); draw(x, w, hh); }
+    paint();
+    var t = new T.CanvasTexture(c); t.encoding = T.sRGBEncoding; t.anisotropy = ANISO;
+    t.redraw = function () { paint(); t.needsUpdate = true; };
     return t;
+  }
+  // Ajuste la taille d'une police pour que le texte tienne dans « max » pixels
+  function fit(x, text, weight, size, family, max) {
+    x.font = weight + " " + size + "px " + family;
+    while (x.measureText(text).width > max && size > 10) { size -= 2; x.font = weight + " " + size + "px " + family; }
+    return size;
   }
   function rr(x, a, b, w, hh, rad) {
     x.beginPath(); x.moveTo(a + rad, b); x.arcTo(a + w, b, a + w, b + hh, rad); x.arcTo(a + w, b + hh, a, b + hh, rad);
     x.arcTo(a, b + hh, a, b, rad); x.arcTo(a, b, a + w, b, rad); x.closePath();
   }
   function flat(t, w, hh, x, y, z, ry) {
-    return put(new T.PlaneGeometry(w, hh), new T.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false }), x, y, z, { c: false, r: false, ry: ry });
+    // toneMapped: false : le blanc du texte reste blanc pur (le tone mapping le grisait et le rendait flou)
+    return put(new T.PlaneGeometry(w, hh), new T.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, toneMapped: false }), x, y, z, { c: false, r: false, ry: ry });
   }
   var texs = [], pick = [];
 
@@ -120,25 +136,45 @@
   var white = M(0xf4f4f0, { roughness: 0.5 }), dark = M(0x1b2024, { roughness: 0.6 });
   B(3.8, 0.1, 1.7, white, 0, 1.6, -4.05);
   [[-1.8, -4.75], [1.8, -4.75], [-1.8, -3.35], [1.8, -3.35]].forEach(function (p) { B(0.08, 1.55, 0.08, white, p[0], 0.8, p[1]); });
-  B(1.8, 1.05, 0.06, dark, -0.6, 2.4, -4.35); B(0.1, 0.5, 0.1, dark, -0.6, 1.9, -4.35); B(0.6, 0.03, 0.35, dark, -0.6, 1.67, -4.3);
+  B(1.8, 1.05, 0.06, dark, -0.6, 2.4, -4.35); B(0.1, 0.5, 0.1, dark, -0.6, 1.9, -4.44); // pied derrière la dalle B(0.6, 0.03, 0.35, dark, -0.6, 1.67, -4.3);
 
-  // Écran : dossiers de compétences
-  var FO = D.dossiers;
-  var scrM = tex(1024, 580, function (x, W, H) {
+  // Écran du bureau : « Compétences », une carte par rubrique du CV
+  var scrM = tex(1024, 572, function (x, W, H) {
     var g = x.createLinearGradient(0, 0, W, H); g.addColorStop(0, "#f77f00"); g.addColorStop(0.55, "#d9a12b"); g.addColorStop(1, "#009e60");
     x.fillStyle = g; x.fillRect(0, 0, W, H);
-    x.fillStyle = "rgba(255,255,255,.9)"; rr(x, 60, 40, W - 120, H - 120, 18); x.fill();
-    ["#ff5f57", "#febc2e", "#28c840"].forEach(function (c, i) { x.fillStyle = c; x.beginPath(); x.arc(92 + i * 26, 68, 8, 0, 7); x.fill(); });
-    x.textAlign = "center";
-    FO.forEach(function (n, i) {
-      var cx = 100 + (i % 4) * 206 + 103, cy = 115 + ((i / 4) | 0) * 125;
-      x.fillStyle = "#7bbcf5"; rr(x, cx - 40, cy, 36, 14, 5); x.fill();
-      x.fillStyle = "#4a9bec"; rr(x, cx - 40, cy + 8, 80, 56, 8); x.fill();
-      x.fillStyle = "#2b3b3a"; x.font = "500 20px Hanken Grotesk,Arial,sans-serif"; x.fillText(n, cx, cy + 92);
+    x.fillStyle = "#ffffff"; rr(x, 16, 12, W - 32, H - 24, 14); x.fill();
+    ["#ff5f57", "#febc2e", "#28c840"].forEach(function (c, i) { x.fillStyle = c; x.beginPath(); x.arc(38 + i * 20, 32, 6, 0, 7); x.fill(); });
+    // En-tête
+    x.textAlign = "left"; x.fillStyle = "#12332b"; x.font = "800 34px " + DISPLAY; x.fillText("Compétences", 40, 92);
+    x.fillStyle = "#f77f00"; rr(x, 40, 104, 70, 5, 2.5); x.fill();
+    x.textAlign = "right"; x.fillStyle = "#5b6b66"; x.font = "500 15px " + FONT; x.fillText(D.nom + " · d’après mon CV", W - 40, 90);
+    // Grille 4 x 2
+    var gx = 40, gy = 124, gap = 12, cw = (W - 2 * gx - 3 * gap) / 4, chh = (H - 30 - gy - gap) / 2;
+    SK.forEach(function (s, i) {
+      var cx = gx + (i % 4) * (cw + gap), cy = gy + ((i / 4) | 0) * (chh + gap), col = s[3];
+      x.fillStyle = "#f3f5f4"; rr(x, cx, cy, cw, chh, 12); x.fill();
+      x.fillStyle = col; rr(x, cx, cy, cw, 6, 3); x.fill();
+      x.textAlign = "left"; x.fillStyle = "#14231f"; fit(x, s[0], 700, 17, FONT, cw - 28); x.fillText(s[0], cx + 14, cy + 36);
+      // Étiquettes, avec retour à la ligne
+      x.font = "600 14.5px " + FONT;
+      var px = cx + 14, py = cy + 52;
+      s[1].forEach(function (it) {
+        var tw = x.measureText(it).width + 20;
+        if (px + tw > cx + cw - 12) { px = cx + 14; py += 34; }
+        x.fillStyle = col; rr(x, px, py, tw, 26, 13); x.fill();
+        x.fillStyle = "#ffffff"; x.fillText(it, px + 10, py + 18);
+        px += tw + 7;
+      });
+      // Niveau (facultatif), une ligne par partie
+      if (s[2]) {
+        x.fillStyle = "#4f5f5a"; x.font = "500 13px " + FONT;
+        var parts = s[2].split(" · ");
+        parts.forEach(function (pt, k) { fit(x, pt, 500, 13, FONT, cw - 28); x.fillText(pt, cx + 14, cy + chh - 14 - (parts.length - 1 - k) * 18); });
+      }
     });
-  });
+  }, 2);
   texs.push(scrM);
-  put(new T.PlaneGeometry(1.7, 0.95), new T.MeshBasicMaterial({ map: scrM }), -0.6, 2.4, -4.312, { c: false, r: false });
+  put(new T.PlaneGeometry(1.7, 0.95), new T.MeshBasicMaterial({ map: scrM, toneMapped: false }), -0.6, 2.4, -4.312, { c: false, r: false });
   B(0.7, 0.02, 0.2, white, -0.6, 1.67, -3.72); B(0.07, 0.03, 0.11, white, -0.1, 1.67, -3.72);
 
   // Ordinateur portable
@@ -241,7 +277,7 @@
   function frame(w, hh, map, x, y, z, ry, url) {
     var g = new T.Group(); g.position.set(x, y, z); g.rotation.y = ry; sc.add(g);
     B(w + 0.16, hh + 0.16, 0.08, white, 0, 0, 0, { p: g, r: false });
-    var pl = put(new T.PlaneGeometry(w, hh), new T.MeshBasicMaterial({ map: map }), 0, 0, 0.045, { c: false, r: false, p: g });
+    var pl = put(new T.PlaneGeometry(w, hh), new T.MeshBasicMaterial({ map: map, toneMapped: false }), 0, 0, 0.045, { c: false, r: false, p: g });
     if (url) { pl.userData.url = url; pl.userData.fr = 1; pick.push(pl); }
     return pl;
   }
@@ -278,24 +314,27 @@
   texs.push(medal);
   put(new T.PlaneGeometry(1.8, 1.8), new T.MeshBasicMaterial({ map: medal, transparent: true, toneMapped: false, depthWrite: false }), -2.95, 4.45, -4.96, { c: false, r: false });
 
-  // Texte peint au centre du mur du fond, au-dessus de l'étagère (comme dans la vidéo)
+  // Texte peint au centre du mur du fond, au-dessus de l'étagère
+  // Ombre portée nette (petit décalage, faible flou) : le texte reste lisible sans paraître baveux
+  function crispShadow(x) { x.shadowColor = "rgba(0,0,0,.28)"; x.shadowBlur = 3; x.shadowOffsetX = 0; x.shadowOffsetY = 2; }
   var hi = tex(1400, 360, function (x, W, H) {
-    x.clearRect(0, 0, W, H); x.textAlign = "center"; x.shadowColor = "rgba(0,0,0,.35)"; x.shadowBlur = 10;
-    x.fillStyle = "#fff"; x.font = "500 62px Hanken Grotesk,Arial,sans-serif";
-    x.fillText("Je m’appelle Bienvenu Cedrick Bakary Yapo", W / 2, 110);
-    // Deuxième ligne : « créatif » en grand et doré ; on réduit la taille jusqu'à ce que la ligne tienne
-    var a = "Je suis un développeur web ", b = "créatif", c = " et mobile.", k = 1, wa, wb, wc;
+    x.clearRect(0, 0, W, H); crispShadow(x); x.textBaseline = "alphabetic";
+    // Ligne 1 : « Je suis » + nom en doré
+    var a = "Je suis ", b = D.nom, k = 1, wa, wb;
     do {
-      x.font = "500 " + Math.round(62 * k) + "px Hanken Grotesk,Arial,sans-serif"; wa = x.measureText(a).width; wc = x.measureText(c).width;
-      x.font = "800 " + Math.round(96 * k) + "px Unbounded,Arial Black,sans-serif"; wb = x.measureText(b).width;
-      k -= 0.05;
-    } while (wa + wb + wc > W - 60 && k > 0.4);
-    k += 0.05;
-    var start = W / 2 - (wa + wb + wc) / 2; x.textAlign = "left";
-    x.font = "500 " + Math.round(62 * k) + "px Hanken Grotesk,Arial,sans-serif"; x.fillStyle = "#fff"; x.fillText(a, start, 240);
-    x.font = "800 " + Math.round(96 * k) + "px Unbounded,Arial Black,sans-serif"; x.fillStyle = "#ffd36a"; x.fillText(b, start + wa, 240);
-    x.font = "500 " + Math.round(62 * k) + "px Hanken Grotesk,Arial,sans-serif"; x.fillStyle = "#fff"; x.fillText(c, start + wa + wb, 240);
-  });
+      x.font = "500 " + Math.round(64 * k) + "px " + FONT; wa = x.measureText(a).width;
+      x.font = "800 " + Math.round(70 * k) + "px " + DISPLAY; wb = x.measureText(b).width;
+      k -= 0.03;
+    } while (wa + wb > W - 40 && k > 0.4);
+    k += 0.03;
+    var st0 = W / 2 - (wa + wb) / 2; x.textAlign = "left";
+    x.font = "500 " + Math.round(64 * k) + "px " + FONT; x.fillStyle = "#ffffff"; x.fillText(a, st0, 130);
+    x.font = "800 " + Math.round(70 * k) + "px " + DISPLAY; x.fillStyle = "#ffd36a"; x.fillText(b, st0 + wa, 130);
+    // Filet orange, puis ligne 2
+    x.shadowColor = "transparent"; x.fillStyle = "#f77f00"; rr(x, W / 2 - 60, 172, 120, 6, 3); x.fill(); crispShadow(x);
+    x.textAlign = "center"; x.fillStyle = "#ffffff"; fit(x, "Étudiant en Licence de Génie Logiciel", 600, 66, FONT, W - 80);
+    x.fillText("Étudiant en Licence de Génie Logiciel", W / 2, 268);
+  }, 2);
   texs.push(hi);
   flat(hi, 3.9, 1.0, 0, 5.2, -4.97, 0);
 
@@ -312,18 +351,19 @@
       x.font = "500 26px Arial,sans-serif"; x.fillStyle = "rgba(255,255,255,.9)";
       x.fillText(p[2] || "Projet GitHub", 40, hh / 2 + 60);
       x.fillText("Voir le code", 40, hh - 40);
-    });
+    }, 2);
     texs.push(t);
     return t;
   }
   // Étiquette dorée (titre et catégories)
   function goldLabel(text, size) {
     var t = tex(1024, 200, function (x, W, H) {
+      x.shadowColor = "transparent";
       x.clearRect(0, 0, W, H); x.textAlign = "center"; x.font = "800 " + size + "px Unbounded,Arial Black,sans-serif";
       x.fillStyle = "#8a5a0c"; for (var k = 6; k > 0; k--) x.fillText(text, W / 2 + k * 0.5, 130 + k * 0.9);
       var g = x.createLinearGradient(0, 40, 0, 140); g.addColorStop(0, "#ffe08a"); g.addColorStop(1, "#e0a526");
       x.fillStyle = g; x.fillText(text, W / 2, 130);
-    });
+    }, 2);
     texs.push(t);
     return t;
   }
@@ -349,28 +389,67 @@
   put(new T.CylinderGeometry(0.02, 0.02, 2.8, 8), dark, -5.4, 1.4, 5.3);
   put(new T.SphereGeometry(0.28, 20, 16), new T.MeshBasicMaterial({ color: 0xffe2a8 }), -5.4, 2.9, 5.3, { c: false });
 
-  /* --- Télé : le parcours défile à l'écran --- */
-  // Générique de la télé : [texte, style] ; "d" = date dorée, "t" = titre, "" = texte
-  var TV_LINES = [["Chroniqueur radio, monteur vidéo :", "t"], ["j’aime raconter des histoires", ""], ["en mots et en images.", ""], ["", ""], ["Mon parcours", "t"], ["", ""]];
-  PARC.forEach(function (p) { TV_LINES.push([p[0], "d"], [p[1], "t"], [p[2], ""], ["", ""]); });
-  var TV_LH = 72, tvScroll = 0, tvStart = 0;
+  /* --- Télé : « Projet » en grand, le hackathon défile, puis « Expérience professionnelle »
+         en grand et les stages défilent ; la boucle recommence. --- */
+  // Lignes : [texte, style] ; "t" = titre, "d" = doré, "" = texte, "s" = petit texte
+  var TV_PROJ = [[PJ.titre, "t"], [PJ.resultat, "d"], [PJ.lieu, "s"], ["", ""]];
+  PJ.points.forEach(function (p) { TV_PROJ.push([p, ""]); });
+  TV_PROJ.push([PJ.role, "d"], ["", ""], ["Code : " + PJ.depot, "s"]);
+  var TV_EXP = [];
+  D.experiences.forEach(function (e, k) {
+    if (k) TV_EXP.push(["", ""]);
+    TV_EXP.push([e[0], "t"], [e[1] + " · " + e[2], "d"], [e[3], ""], ["Durée : " + e[4], "s"]);
+  });
+  var TV_PHASES = [
+    { title: "Projet", num: "01", tag: "PROJET" },
+    { lines: TV_PROJ, tag: "PROJET" },
+    { title: "Expérience professionnelle", num: "02", tag: "EXPÉRIENCE" },
+    { lines: TV_EXP, tag: "EXPÉRIENCE" }
+  ];
+  var TV_LH = 60, TV_SPEED = 0.055, TV_TITLE_MS = 5000, TV_STATIC_MS = 9000, tvStart = 0, tvNow = 0;
+  function tvDur(ph) { return ph.title ? TV_TITLE_MS : reduce ? TV_STATIC_MS : (ph.lines.length * TV_LH + 576 + 40) / TV_SPEED; }
+  var TV_TOTAL = TV_PHASES.reduce(function (s, ph) { return s + tvDur(ph); }, 0);
   var tvT = tex(1024, 576, function (x, W, H) {
-    x.shadowBlur = 0; x.fillStyle = "#05060c"; x.fillRect(0, 0, W, H);
-    x.textAlign = "center"; x.shadowColor = "#f77f00"; x.shadowBlur = 20;
-    var total = TV_LINES.length * TV_LH + H;
-    var y0 = H + 40 - (tvScroll % total);
-    TV_LINES.forEach(function (l, k) {
+    x.shadowColor = "transparent"; x.fillStyle = "#05060c"; x.fillRect(0, 0, W, H);
+    if (!tvStart) return;
+    // Phase en cours et temps écoulé dans cette phase
+    var u = (tvNow - tvStart) % TV_TOTAL, i = 0;
+    while (u >= tvDur(TV_PHASES[i])) { u -= tvDur(TV_PHASES[i]); i++; }
+    var ph = TV_PHASES[i], dur = tvDur(ph);
+    x.textAlign = "center";
+    if (ph.title) {
+      // Carton titre : fondu d'entrée et de sortie, filet orange qui s'allonge
+      var al = reduce ? 1 : Math.max(0, Math.min(1, u / 500, (dur - u) / 500));
+      x.globalAlpha = al;
+      x.fillStyle = "#f77f00"; x.font = "800 30px " + DISPLAY; x.fillText(ph.num, W / 2, 200);
+      var sz = fit(x, ph.title, 800, 96, DISPLAY, W - 100);
+      var g = x.createLinearGradient(0, 300 - sz, 0, 300); g.addColorStop(0, "#ffe08a"); g.addColorStop(1, "#e0a526");
+      x.shadowColor = "rgba(247,127,0,.55)"; x.shadowBlur = 24; x.fillStyle = g; x.fillText(ph.title, W / 2, 300 + sz * 0.15);
+      x.shadowColor = "transparent";
+      var lw = 220 * (reduce ? 1 : Math.min(1, u / 900));
+      x.fillStyle = "#f77f00"; rr(x, W / 2 - lw / 2, 350, lw, 6, 3); x.fill();
+      x.globalAlpha = 1;
+      return;
+    }
+    // Générique : défilement de bas en haut (ou page fixe si les animations sont réduites)
+    var n = ph.lines.length, y0 = reduce ? (H - n * TV_LH) / 2 + 44 : H + 40 - u * TV_SPEED;
+    ph.lines.forEach(function (l, k) {
       var y = y0 + k * TV_LH;
       if (y < -40 || y > H + 60 || !l[0]) return;
-      x.font = l[1] === "t" ? "800 50px Hanken Grotesk,Arial,sans-serif" : "500 42px Hanken Grotesk,Arial,sans-serif";
-      x.fillStyle = l[1] === "d" ? "#ffd36a" : l[1] === "t" ? "#ffffff" : "#ffe9d2";
+      var st = l[1], size = st === "t" ? 46 : st === "s" ? 28 : 34;
+      x.fillStyle = st === "d" ? "#ffd36a" : st === "t" ? "#ffffff" : st === "s" ? "#c9d3cf" : "#ffe9d2";
+      fit(x, l[0], st === "t" ? 800 : 500, size, st === "t" ? DISPLAY : FONT, W - 120);
       x.fillText(l[0], W / 2, y);
     });
-    // Fondu en haut et en bas de l'écran
-    var g = x.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, "rgba(5,6,12,1)"); g.addColorStop(0.16, "rgba(5,6,12,0)"); g.addColorStop(0.84, "rgba(5,6,12,0)"); g.addColorStop(1, "rgba(5,6,12,1)");
-    x.shadowBlur = 0; x.fillStyle = g; x.fillRect(0, 0, W, H);
-  });
+    // Fondu en haut et en bas, puis étiquette de la rubrique en haut à gauche
+    var fg = x.createLinearGradient(0, 0, 0, H);
+    fg.addColorStop(0, "rgba(5,6,12,1)"); fg.addColorStop(0.2, "rgba(5,6,12,0)"); fg.addColorStop(0.84, "rgba(5,6,12,0)"); fg.addColorStop(1, "rgba(5,6,12,1)");
+    x.fillStyle = fg; x.fillRect(0, 0, W, H);
+    x.textAlign = "left"; x.font = "800 18px " + DISPLAY;
+    var tw = x.measureText(ph.tag).width + 28;
+    x.fillStyle = "#f77f00"; rr(x, 28, 24, tw, 34, 17); x.fill();
+    x.fillStyle = "#05060c"; x.fillText(ph.tag, 42, 48);
+  }, 1.5);
   texs.push(tvT);
   // Grande télé sur le mur d'en face, exactement face au canapé jaune (même axe x = 3.75)
   put(new T.PlaneGeometry(12, WH), wallM(0x17705a), 0, WH / 2, 6, { c: false, ry: Math.PI });
@@ -387,6 +466,60 @@
   var dm = M(0xe9ece6, { roughness: 0.6 });
   B(1.1, 2.2, 0.06, white, 0, 0, 0, { p: dr }); B(0.82, 0.8, 0.02, dm, 0, 0.55, 0.04, { p: dr }); B(0.82, 0.8, 0.02, dm, 0, -0.5, 0.04, { p: dr });
   put(new T.SphereGeometry(0.05, 12, 10), dark, 0.4, 0, 0.07, { p: dr });
+
+  /* --- Panneau Contact, sur le mur de la télé, à gauche de la porte --- */
+  // Le groupe est tourné de π : le x local positif est à droite pour le visiteur
+  var cb = new T.Group(); cb.position.set(-2.5, 3.05, 5.95); cb.rotation.y = Math.PI; sc.add(cb);
+  B(4.0, 2.9, 0.05, M(0x12332b, { roughness: 0.8 }), 0, 0, 0, { p: cb });
+  B(4.12, 3.02, 0.03, M(0xd9a441, { roughness: 0.3, metalness: 0.7 }), 0, 0, -0.012, { p: cb });
+  var cHead = tex(1200, 200, function (x, W) {
+    x.clearRect(0, 0, W, 200); x.textAlign = "center";
+    var g = x.createLinearGradient(0, 30, 0, 110); g.addColorStop(0, "#ffe08a"); g.addColorStop(1, "#e0a526");
+    x.fillStyle = g; x.font = "800 86px " + DISPLAY; x.fillText("Contact", W / 2, 105);
+    x.fillStyle = "#f77f00"; rr(x, W / 2 - 55, 128, 110, 6, 3); x.fill();
+    x.fillStyle = "#e6efeb"; x.font = "500 34px " + FONT; x.fillText("Je recherche un stage en développement web et mobile.", W / 2, 182);
+  }, 2);
+  texs.push(cHead);
+  cb.add(flat(cHead, 3.6, 0.6, 0, 0.95, 0.03, 0));
+  // Pictogrammes dessinés au trait (blanc sur la pastille de couleur)
+  var GLYPH = {
+    tel: function (x) {
+      x.save(); x.rotate(-Math.PI / 4); x.lineCap = "round"; x.lineWidth = 15;
+      x.beginPath(); x.arc(0, 0, 34, Math.PI * 0.62, Math.PI * 1.38); x.stroke();
+      [Math.PI * 0.62, Math.PI * 1.38].forEach(function (a) { x.beginPath(); x.arc(Math.cos(a) * 34, Math.sin(a) * 34, 13, 0, 7); x.fill(); });
+      x.restore();
+    },
+    mail: function (x) { x.lineWidth = 8; x.lineJoin = "round"; x.strokeRect(-38, -26, 76, 52); x.beginPath(); x.moveTo(-38, -26); x.lineTo(0, 6); x.lineTo(38, -26); x.stroke(); },
+    in: function (x) { x.textAlign = "center"; x.font = "800 64px Arial,sans-serif"; x.fillText("in", 0, 22); },
+    gh: function (x) { x.textAlign = "center"; x.font = "800 40px " + FONT; x.fillText("</>", 0, 14); },
+    pin: function (x) {
+      x.beginPath(); x.arc(0, -10, 28, Math.PI * 0.85, Math.PI * 2.15); x.lineTo(0, 38); x.closePath(); x.fill();
+      x.fillStyle = "#c2410c"; x.beginPath(); x.arc(0, -10, 11, 0, 7); x.fill();
+    },
+    cv: function (x) { x.textAlign = "center"; x.font = "800 46px " + DISPLAY; x.fillText("CV", 0, 17); }
+  };
+  var CONTACTS = [
+    ["Téléphone", D.telephone, "#009e60", "tel", D.telephoneLien],
+    ["E-mail", D.email, "#f77f00", "mail", "mailto:" + D.email],
+    ["LinkedIn", "bienvenu-cedrick-bakary", "#0a66c2", "in", D.linkedin],
+    ["GitHub", "bakiyapo9-bot", "#24292f", "gh", GH.replace(/\/$/, "")],
+    ["Localisation", D.ville, "#c2410c", "pin", "https://www.google.com/maps/search/?api=1&query=Grand-Bassam%2C%20C%C3%B4te%20d%E2%80%99Ivoire"],
+    ["Mon CV", "Télécharger le PDF", "#8a1c2b", "cv", "cv"]
+  ];
+  CONTACTS.forEach(function (c, k) {
+    var card = tex(1020, 280, function (x, W, H) {
+      x.clearRect(0, 0, W, H); x.shadowColor = "transparent";
+      x.fillStyle = "#ffffff"; rr(x, 4, 4, W - 8, H - 8, 36); x.fill();
+      x.fillStyle = c[2]; x.beginPath(); x.arc(140, H / 2, 86, 0, 7); x.fill();
+      x.save(); x.translate(140, H / 2); x.fillStyle = "#fff"; x.strokeStyle = "#fff"; GLYPH[c[3]](x); x.restore();
+      x.textAlign = "left"; x.fillStyle = "#6a7a75"; x.font = "700 34px " + FONT; x.fillText(c[0].toUpperCase(), 262, 116);
+      x.fillStyle = "#12201c"; fit(x, c[1], 700, 54, FONT, W - 300); x.fillText(c[1], 262, 184);
+    }, 1.5);
+    texs.push(card);
+    var col = k % 2, row = (k / 2) | 0;
+    var m = put(new T.PlaneGeometry(1.75, 0.48), new T.MeshBasicMaterial({ map: card, transparent: true, toneMapped: false }), col ? 0.92 : -0.92, 0.22 - row * 0.6, 0.035, { c: false, r: false, p: cb });
+    m.userData.url = c[4]; m.userData.hs = 1.05; m.userData.z = [STEP.contact - 0.4, STEP.contact + 0.1]; pick.push(m);
+  });
 
   // Pop-corn sur la table vitrée devant le canapé
   var bk = new T.Group(); bk.position.set(3.75, 0.575, -2.75); sc.add(bk);
@@ -474,7 +607,7 @@
   APPS.forEach(function (a, k) {
     var p = scr2local(APP_POS[k][0], APP_POS[k][1]);
     var m = put(new T.PlaneGeometry(ICON, ICON), new T.MeshBasicMaterial({ map: ico(a[1], a[2]), transparent: true }), p[0], p[1], FRONT + 0.005, { c: false, r: false, p: ph });
-    m.userData.url = a[3]; m.userData.z = [LAST - 0.4, LAST + 0.1]; pick.push(m);
+    m.userData.url = a[3]; m.userData.z = [STEP.phone - 0.4, STEP.phone + 0.4]; pick.push(m);
   });
 
   // Ma photo encadrée (mur de droite) : passe-partout crème, photo recadrée sur la silhouette
@@ -506,21 +639,21 @@
   // Lumière douce qui éclaire le cadre
   var spot = new T.SpotLight(0xffe2b0, 0.9, 4, 0.7, 0.6); spot.position.set(5.6, 3.4, -1.8); spot.target.position.set(5.95, 2.1, -1.8);
   sc.add(spot); sc.add(spot.target);
-  // Présentation peinte au-dessus de la photo
-  var about = tex(1400, 420, function (x, W) {
-    x.clearRect(0, 0, W, 420); x.shadowColor = "rgba(0,0,0,.35)"; x.shadowBlur = 10;
-    x.font = "500 60px Hanken Grotesk,Arial,sans-serif";
-    var a = "J’habite à ", b = "Grand-Bassam, Côte d’Ivoire", c = ".";
-    var wa = x.measureText(a).width, wb = x.measureText(b).width, wc = x.measureText(c).width, st0 = W / 2 - (wa + wb + wc) / 2;
-    x.textAlign = "left"; x.fillStyle = "#ffffff"; x.fillText(a, st0, 110);
-    x.fillStyle = "#ffd36a"; x.fillText(b, st0 + wa, 110); x.fillStyle = "#ffffff"; x.fillText(c, st0 + wa + wb, 110);
-    x.textAlign = "center";
-    x.fillText("Étudiant en Licence 2 de génie logiciel à l’IIT,", W / 2, 200);
-    x.fillText("vainqueur du Hackathon IIT 2026, je cherche", W / 2, 290);
-    x.fillText("un stage en développement web et mobile.", W / 2, 380);
-  });
+  // Profil peint au-dessus de la photo (repris du CV), côté fauteuil jaune
+  var about = tex(1400, 470, function (x, W, H) {
+    x.clearRect(0, 0, W, H); crispShadow(x); x.textAlign = "center";
+    x.fillStyle = "#ffd36a"; x.font = "800 58px " + DISPLAY; x.fillText("Mon profil", W / 2, 72);
+    x.shadowColor = "transparent"; x.fillStyle = "#f77f00"; rr(x, W / 2 - 50, 96, 100, 6, 3); x.fill(); crispShadow(x);
+    x.fillStyle = "#ffffff";
+    ["Motivé et sérieux, je recherche un stage",
+     "pour mettre en pratique mes connaissances en",
+     "programmation et en développement web et mobile."].forEach(function (l, k) {
+      fit(x, l, 500, 54, FONT, W - 60); x.fillText(l, W / 2, 182 + k * 76);
+    });
+    x.fillStyle = "#ffd36a"; x.font = "600 44px " + FONT; x.fillText(D.ville, W / 2, 432);
+  }, 2);
   texs.push(about);
-  flat(about, 3.4, 1.02, 5.96, 3.75, -1.8, -Math.PI / 2);
+  flat(about, 3.6, 1.21, 5.96, 3.86, -1.8, -Math.PI / 2);
 
   // Poussière en suspension
   var N = 140, pa = new Float32Array(N * 3);
@@ -555,7 +688,7 @@
   WP[STEP.home] = W(V(0.4, 2.7, 5.2), V(0, 2.7, -4));                  // La maison entière
   WP[STEP.name] = W(V(-0.9, 4.5, 0.4), V(-0.9, 4.5, -5));              // Mur du fond : le nom et le médaillon
   WP[STEP.photo] = W(V(0.4, 2.85, -1.8), V(6, 2.75, -1.8), RIGHT);     // Mur de droite : ma photo
-  WP[STEP.desk] = W(V(-0.3, 2.5, -1.7), V(-0.5, 2.3, -4.3), LEFT);     // Retour au fond : le bureau (compétences)
+  WP[STEP.desk] = W(V(-0.58, 2.44, -2.72), V(-0.6, 2.4, -4.35), LEFT); // Retour au fond : face à l'écran (compétences)
   WP[STEP.projects] = W(V(2.0, 3.5, -1.2), V(-6, 3.5, -1.2), LEFT);    // Encore à gauche : le mur des projets
   // Vers la droite en repassant devant le bureau (regard baissé), puis assis dans le fauteuil
   WP[STEP.sofa] = W(V(3.75, 1.75, -4.0), V(6, 1.6, 0), RIGHT, V(-0.8, 2.4, -1.2), -0.5);
@@ -564,6 +697,8 @@
   // On se lève, on traverse le milieu du salon (en contournant la chaise) en tournant encore
   // à droite, et on se penche sur le téléphone
   WP[STEP.phone] = W(V(-1.2, 2.4, -2.95), V(-1.25, 1.67, -3.5), RIGHT, V(-0.5, 2.8, 1.5));
+  // On se redresse et on se tourne (par la gauche, dans le sens de la marche) vers le panneau Contact
+  WP[STEP.contact] = W(V(-2.5, 3.05, 1.35), V(-2.5, 3.0, 6), LEFT);
   // Déroule les angles : chaque lacet devient continu avec le précédent, dans le sens demandé
   for (i = 1; i < WP.length; i++) {
     var da = WP[i].a - WP[i - 1].a;
@@ -603,12 +738,15 @@
     ph.rotation.z = 0.3 + Math.sin(t / 1700) * 0.03 * up;
     dust.position.x = Math.sin(t / 6000) * 0.4 * up; dust.position.y = Math.sin(t / 4000) * 0.15 * up;
     var q = Date.now() / 1000 | 0; if (q !== ls) { if ((q / 60 | 0) !== (ls / 60 | 0)) pscr.redraw(); ls = q; clk.redraw(); }
-    // La télé ne se redessine que lorsqu'on s'en approche
-    if (S.p > STEP.tv - 0.8) { if (!tvStart) tvStart = t; tvScroll = reduce ? 330 : 330 + (t - tvStart) * 0.045; tvT.redraw(); } else tvStart = 0;
+    // La télé s'allume quand on s'assoit dans le fauteuil (elle commence par « Projet »),
+    // et s'éteint quand on s'en éloigne ; elle ne se redessine que lorsqu'elle est allumée
+    var tvOn = S.p > STEP.sofa - 0.3 && S.p < STEP.phone - 0.2;
+    if (tvOn) { if (!tvStart) tvStart = t; tvNow = t; tvT.redraw(); }
+    else if (tvStart) { tvStart = 0; tvT.redraw(); }
     ttlP.material.opacity = reduce ? 1 : Math.max(0, 1 - Math.abs(S.p - STEP.projects) * 1.8);
     var ai = Math.round(S.p); if (ai !== la) { la = ai; dots.forEach(function (b, k) { b.classList.toggle("on", k === ai); }); }
     pick.forEach(function (o) {
-      var f = o.userData.fr, tg = f ? o.parent : o, k = o === S.hv ? (f ? 1.06 : 1.15) : 1;
+      var f = o.userData.fr, tg = f ? o.parent : o, k = o === S.hv ? (o.userData.hs || (f ? 1.06 : 1.15)) : 1;
       tg.scale.x += (k - tg.scale.x) * 0.15; tg.scale.y = tg.scale.z = tg.scale.x;
     });
   }
