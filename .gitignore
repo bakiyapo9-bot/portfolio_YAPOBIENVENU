@@ -1,0 +1,18 @@
+# Systèmes d'exploitation
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Éditeurs
+.vscode/
+.idea/
+*.swp
+
+# Dépendances et builds éventuels
+node_modules/
+dist/
+
+# Fichiers locaux et secrets
+.env
+.env.*
+*.log
