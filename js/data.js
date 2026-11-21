@@ -10,15 +10,17 @@ window.PORTFOLIO = {
   ville: "Grand-Bassam, Côte d’Ivoire",
   cv: "assets/docs/CV_Bienvenu_Cedrick_Bakary_Yapo.pdf",
 
-  // [titre, description, technologies, dépôt GitHub, couleur claire, couleur foncée]
+  // [titre, description, technologies, lien, couleur claire, couleur foncée]
+  // Lien : un nom de dépôt GitHub (« edu.ai ») ou l'adresse complète d'un site en ligne (https://…)
   perso: [
     ["edu.IA", "Tuteur IA pour lycéens ivoiriens : cours du programme, exercices et assistant vocal Akwaba. Vainqueur du Hackathon IIT 2026.", "HTML, CSS, JavaScript, Python", "edu.ai", "#f77f00", "#c45f00"],
-    ["IvoireMarket", "Marketplace multi-vendeurs avec un espace par rôle, paiement simulé et code promo.", "HTML5, CSS3, Bootstrap, JavaScript", "IvoireMarket", "#009e60", "#006b40"],
-    ["Campus360", "Gestion universitaire : étudiants, inscriptions, notes, emplois du temps et finances.", "HTML, CSS, Bootstrap, JavaScript", "Campus360", "#1f5fbf", "#123a78"]
+    ["YBSHOPING", "Boutique en ligne de baskets et sneakers.", "HTML, CSS, JavaScript", "https://ybshopping.netlify.app/", "#009e60", "#006b40"],
+    ["Campus360", "Gestion universitaire : étudiants, inscriptions, notes, emplois du temps et finances.", "HTML, CSS, Bootstrap, JavaScript", "Campus360", "#1f5fbf", "#123a78"],
+    ["Calculatrice scientifique", "Application de calcul scientifique.", "", "https://calculatricescientifi.netlify.app/", "#0f7c8c", "#0a4f59"]
   ],
   acad: [
-    ["Site Maserati", "Site vitrine multi-pages d’une concession fictive, avec formulaire de contact.", "HTML, CSS, Bootstrap, JavaScript", "Projets-Bootstrap", "#8a1c2b", "#4e0f19"],
-    ["Calculatrice scientifique", "Application de calcul scientifique.", "", "Calculatrice_Scientifique", "#0f7c8c", "#0a4f59"]
+    ["Site Maserati", "Site vitrine multi-pages d’une concession fictive, avec formulaire de contact.", "HTML, CSS, Bootstrap, JavaScript", "https://maserati-site.netlify.app/", "#8a1c2b", "#4e0f19"],
+    ["MCR Construction", "Site vitrine d’une entreprise de construction : bâtiment, infrastructures et génie civil.", "HTML, CSS, Bootstrap, JavaScript", "https://mcr-construction.netlify.app/", "#c9821b", "#7a4a0c"]
   ],
 
   // Compétences affichées sur l'écran du bureau : [rubrique, éléments, niveau (facultatif), couleur]

@@ -17,19 +17,25 @@
   var PERSO = D.perso, ACAD = D.acad, SK = D.competences, PJ = D.projet;
 
   /* ---------- Version texte (lecteurs d'écran) ---------- */
-  function li(text, href) {
+  // Un projet pointe soit vers un dépôt GitHub (nom du dépôt), soit vers un site en ligne (https://…)
+  function isSite(p) { return /^https?:\/\//.test(p[3]); }
+  function projUrl(p) { return isSite(p) ? p[3] : GH + p[3]; }
+  function li(text, href, label) {
     var el = document.createElement("li");
     el.textContent = text;
     if (href) {
       var a = document.createElement("a");
       a.href = href; a.target = "_blank"; a.rel = "noopener";
-      a.textContent = " Voir le code sur GitHub";
+      a.textContent = " " + (label || "Voir le code sur GitHub");
       el.appendChild(a);
     }
     return el;
   }
-  PERSO.forEach(function (p) { document.getElementById("list-perso").appendChild(li(p[0] + " : " + p[1], GH + p[3])); });
-  ACAD.forEach(function (p) { document.getElementById("list-acad").appendChild(li(p[0] + " : " + p[1], GH + p[3])); });
+  [[PERSO, "list-perso"], [ACAD, "list-acad"]].forEach(function (g) {
+    g[0].forEach(function (p) {
+      document.getElementById(g[1]).appendChild(li(p[0] + " : " + p[1], projUrl(p), isSite(p) ? "Voir le site en ligne" : ""));
+    });
+  });
   document.getElementById("list-projet").appendChild(li(PJ.titre + ", " + PJ.resultat + " (" + PJ.lieu + "). " + PJ.points.join(". ") + ". " + PJ.role + ".", GH + "edu.ai"));
   D.experiences.forEach(function (x) { document.getElementById("list-experience").appendChild(li(x[0] + ", " + x[1].toLowerCase() + " : " + x[2] + ", " + x[3] + " (" + x[4] + ")")); });
   D.formation.forEach(function (p) { document.getElementById("list-formation").appendChild(li(p[0] + " : " + p[1] + ", " + p[2])); });
@@ -349,8 +355,8 @@
       while (x.measureText(p[0]).width > w - 80 && fs > 26) { fs -= 4; x.font = "800 " + fs + "px Unbounded,Arial Black,sans-serif"; }
       x.fillText(p[0], 40, hh / 2 + 10);
       x.font = "500 26px Arial,sans-serif"; x.fillStyle = "rgba(255,255,255,.9)";
-      x.fillText(p[2] || "Projet GitHub", 40, hh / 2 + 60);
-      x.fillText("Voir le code", 40, hh - 40);
+      x.fillText(p[2] || (isSite(p) ? "Site en ligne" : "Projet GitHub"), 40, hh / 2 + 60);
+      x.fillText(isSite(p) ? "Voir le site" : "Voir le code", 40, hh - 40);
     }, 2);
     texs.push(t);
     return t;
@@ -370,9 +376,17 @@
   var ttlP = flat(goldLabel("Mes Projets", 96), 3.6, 0.7, -5.9, 5.75, -1.2, Math.PI / 2);
   flat(goldLabel("Projets personnels", 64), 2.6, 0.5, -5.9, 4.95, -1.2, Math.PI / 2);
   flat(goldLabel("Projets académiques", 64), 2.6, 0.5, -5.9, 2.82, -1.2, Math.PI / 2);
-  // Le mur de gauche regarde vers +x : le z croissant va de gauche à droite pour le visiteur
-  [-3.4, -1.2, 1.0].forEach(function (z, k) { frame(1.9, 1.43, projTex(PERSO[k]), -5.93, 3.95, z, Math.PI / 2, GH + PERSO[k][3]); });
-  [-2.3, -0.1].forEach(function (z, k) { frame(1.9, 1.43, projTex(ACAD[k]), -5.93, 1.75, z, Math.PI / 2, GH + ACAD[k][3]); });
+  // Le mur de gauche regarde vers +x : le z décroissant va de gauche à droite, donc le 1er projet est à gauche
+  // Une rangée de cadres centrée sur z = -1.2 ; au-delà de 3 cadres, ils rétrécissent pour tenir sur le mur
+  function projRow(list, y) {
+    var n = list.length, w = n > 3 ? 1.55 : 1.9, gap = n > 3 ? 0.2 : 0.3;
+    list.forEach(function (p, k) {
+      var z = -1.2 - (k - (n - 1) / 2) * (w + gap);
+      frame(w, w * 0.7526, projTex(p), -5.93, y, z, Math.PI / 2, projUrl(p));
+    });
+  }
+  projRow(PERSO, 3.95);
+  projRow(ACAD, 1.75);
 
   // Canapé contre le mur du fond, à droite du bureau, avec coussins blancs (comme dans la vidéo)
   var sofa = M(0xffb000, { roughness: 0.85 }), soft = M(0xffc94d, { roughness: 0.9 }), pillow = M(0xf6f6f2, { roughness: 0.9 });
