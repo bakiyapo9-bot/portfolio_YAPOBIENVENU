@@ -287,38 +287,31 @@
     if (url) { pl.userData.url = url; pl.userData.fr = 1; pick.push(pl); }
     return pl;
   }
-  // Médaillon décoratif (sans photo) : halo doux, anneau orange -> or -> vert, rosace dorée
-  var medal = tex(1024, 1024, function (x, W) {
-    var c = W / 2, k, a;
+  // Mon logo (monogramme « BY ») à la place de l'ancien médaillon, sur le mur du fond
+  var logo = tex(1024, 1024, function (x, W) {
+    var c = W / 2;
     x.clearRect(0, 0, W, W);
-    var halo = x.createRadialGradient(c, c, 300, c, c, 510);
-    halo.addColorStop(0, "rgba(255,211,106,.55)"); halo.addColorStop(1, "rgba(255,211,106,0)");
-    x.fillStyle = halo; x.fillRect(0, 0, W, W);
-    var ring = x.createLinearGradient(0, 0, W, W);
-    ring.addColorStop(0, "#f77f00"); ring.addColorStop(0.5, "#ffd36a"); ring.addColorStop(1, "#009e60");
-    x.fillStyle = ring; x.beginPath(); x.arc(c, c, 400, 0, 7); x.fill();
-    var bg = x.createRadialGradient(c, c - 80, 40, c, c, 380);
-    bg.addColorStop(0, "#1f6b55"); bg.addColorStop(1, "#0c2f26");
-    x.fillStyle = bg; x.beginPath(); x.arc(c, c, 378, 0, 7); x.fill();
-    x.save(); x.beginPath(); x.arc(c, c, 370, 0, 7); x.clip();
-    // Rosace : douze cercles entrelacés
-    x.strokeStyle = "rgba(255,211,106,.55)"; x.lineWidth = 3;
-    for (k = 0; k < 12; k++) { a = k / 12 * Math.PI * 2; x.beginPath(); x.arc(c + Math.cos(a) * 150, c + Math.sin(a) * 150, 150, 0, 7); x.stroke(); }
-    // Anneaux concentriques fins
-    x.strokeStyle = "rgba(255,255,255,.18)"; x.lineWidth = 2;
-    [90, 230, 300, 345].forEach(function (rad) { x.beginPath(); x.arc(c, c, rad, 0, 7); x.stroke(); });
-    x.restore();
-    // Losange central doré
-    var g = x.createLinearGradient(c, c - 60, c, c + 60); g.addColorStop(0, "#ffe08a"); g.addColorStop(1, "#e0a526");
-    x.fillStyle = g; x.beginPath(); x.moveTo(c, c - 60); x.lineTo(c + 42, c); x.lineTo(c, c + 60); x.lineTo(c - 42, c); x.closePath(); x.fill();
-    for (k = 0; k < 18; k++) {
-      a = k / 18 * Math.PI * 2;
-      x.fillStyle = k % 3 === 0 ? "#f77f00" : k % 3 === 1 ? "#ffffff" : "#009e60";
-      x.beginPath(); x.arc(c + Math.cos(a) * 450, c + Math.sin(a) * 450, k % 2 ? 7 : 11, 0, 7); x.fill();
-    }
-  });
-  texs.push(medal);
-  put(new T.PlaneGeometry(1.8, 1.8), new T.MeshBasicMaterial({ map: medal, transparent: true, toneMapped: false, depthWrite: false }), -2.95, 4.45, -4.96, { c: false, r: false });
+    // Plaque carrée arrondie vert foncé, liseré doré
+    x.shadowColor = "rgba(0,0,0,.35)"; x.shadowBlur = 30; x.shadowOffsetY = 14;
+    var bg = x.createLinearGradient(0, 120, 0, 900); bg.addColorStop(0, "#1c4a3d"); bg.addColorStop(1, "#0c2a22");
+    x.fillStyle = bg; rr(x, 132, 112, 760, 760, 150); x.fill();
+    x.shadowColor = "transparent";
+    var gold = x.createLinearGradient(0, 112, 0, 872); gold.addColorStop(0, "#ffe08a"); gold.addColorStop(1, "#e0a526");
+    x.strokeStyle = gold; x.lineWidth = 14; rr(x, 156, 136, 712, 712, 128); x.stroke();
+    // Monogramme : B orange, Y blanc, légèrement imbriqués
+    x.textAlign = "center"; x.textBaseline = "alphabetic";
+    x.font = "800 360px " + DISPLAY;
+    var wb = x.measureText("B").width, wy = x.measureText("Y").width, ov = 40, st = c - (wb + wy - ov) / 2;
+    x.textAlign = "left";
+    x.fillStyle = "#f77f00"; x.fillText("B", st, 610);
+    x.fillStyle = "#ffffff"; x.fillText("Y", st + wb - ov, 610);
+    // Filet et signature
+    x.fillStyle = gold; rr(x, c - 150, 668, 300, 8, 4); x.fill();
+    x.textAlign = "center"; x.fillStyle = "#ffd36a"; fit(x, "BIENVENU YAPO", 600, 58, FONT, 600);
+    x.fillText("BIENVENU YAPO", c, 762);
+  }, 1);
+  texs.push(logo);
+  put(new T.PlaneGeometry(1.6, 1.6), new T.MeshBasicMaterial({ map: logo, transparent: true, toneMapped: false, depthWrite: false }), -2.95, 4.45, -4.96, { c: false, r: false });
 
   // Texte peint au centre du mur du fond, au-dessus de l'étagère
   // Ombre portée nette (petit décalage, faible flou) : le texte reste lisible sans paraître baveux
@@ -345,18 +338,39 @@
   flat(hi, 3.9, 1.0, 0, 5.2, -4.97, 0);
 
   /* --- Mur des projets (mur de gauche) : deux catégories --- */
+  // Découpe un texte en lignes de largeur « max » (au plus « n » lignes, avec … si ça dépasse)
+  function wrap(x, text, max, n) {
+    var words = text.split(" "), lines = [], cur = "";
+    words.forEach(function (w) {
+      var t = cur ? cur + " " + w : w;
+      if (x.measureText(t).width > max && cur) { lines.push(cur); cur = w; } else cur = t;
+    });
+    if (cur) lines.push(cur);
+    if (lines.length > n) {
+      lines = lines.slice(0, n);
+      while (x.measureText(lines[n - 1] + "…").width > max) lines[n - 1] = lines[n - 1].replace(/\s*\S+$/, "");
+      lines[n - 1] += "…";
+    }
+    return lines;
+  }
   function projTex(p) {
     var t = tex(640, 480, function (x, w, hh) {
       var g = x.createLinearGradient(0, 0, w, hh); g.addColorStop(0, p[4]); g.addColorStop(1, p[5]);
       x.fillStyle = g; x.fillRect(0, 0, w, hh);
       x.fillStyle = "rgba(255,255,255,.14)"; x.beginPath(); x.arc(w - 70, 70, 120, 0, 7); x.fill();
-      x.fillStyle = "#fff"; var fs = 64;
-      x.font = "800 " + fs + "px Unbounded,Arial Black,sans-serif";
-      while (x.measureText(p[0]).width > w - 80 && fs > 26) { fs -= 4; x.font = "800 " + fs + "px Unbounded,Arial Black,sans-serif"; }
-      x.fillText(p[0], 40, hh / 2 + 10);
-      x.font = "500 26px Arial,sans-serif"; x.fillStyle = "rgba(255,255,255,.9)";
-      x.fillText(p[2] || (isSite(p) ? "Site en ligne" : "Projet GitHub"), 40, hh / 2 + 60);
-      x.fillText(isSite(p) ? "Voir le site" : "Voir le code", 40, hh - 40);
+      x.textAlign = "left"; x.fillStyle = "#fff";
+      fit(x, p[0], 800, 58, DISPLAY, w - 80);
+      x.fillText(p[0], 40, 104);
+      x.font = "600 24px " + FONT; x.fillStyle = "rgba(255,255,255,.85)";
+      x.fillText(p[2] || (isSite(p) ? "Site en ligne" : "Projet GitHub"), 40, 146);
+      // Description du projet
+      x.fillStyle = "#ffffff"; x.font = "500 29px " + FONT;
+      wrap(x, p[1], w - 80, 4).forEach(function (l, k) { x.fillText(l, 40, 206 + k * 38); });
+      // Bouton
+      var lab = isSite(p) ? "Voir le site  →" : "Voir le code  →";
+      x.font = "700 24px " + FONT; var bw = x.measureText(lab).width + 40;
+      x.fillStyle = "rgba(255,255,255,.95)"; rr(x, 40, hh - 86, bw, 48, 24); x.fill();
+      x.fillStyle = p[5]; x.fillText(lab, 60, hh - 54);
     }, 2);
     texs.push(t);
     return t;
@@ -699,6 +713,8 @@
     return { p: pos, a: Math.atan2(-dx, -dz), b: Math.atan2(dy, Math.hypot(dx, dz)), sens: sens || 0, via: via, vb: viaPitch };
   }
   var WP = [];
+  // Recul maximal (m) de chaque étape sur écran étroit (téléphone en portrait), pour que tout tienne dans le cadre
+  var BACK = [0.4, 4, 3, 1.4, 3.5, 0, 0, 0.25, 3];
   WP[STEP.home] = W(V(0.4, 2.7, 5.2), V(0, 2.7, -4));                  // La maison entière
   WP[STEP.name] = W(V(-0.9, 4.5, 0.4), V(-0.9, 4.5, -5));              // Mur du fond : le nom et le médaillon
   WP[STEP.photo] = W(V(0.4, 2.85, -1.8), V(6, 2.75, -1.8), RIGHT);     // Mur de droite : ma photo
@@ -721,11 +737,14 @@
     if (WP[i].sens === RIGHT && da > 0) da -= 2 * Math.PI;
     WP[i].a = WP[i - 1].a + da;
   }
-  var pp = new T.Vector3(), tt = new T.Vector3(), q0 = new T.Vector3(), q1 = new T.Vector3();
+  WP.forEach(function (w, k) { w.mb = BACK[k]; });
+  var narrow = 0, pp = new T.Vector3(), tt = new T.Vector3(), q0 = new T.Vector3(), q1 = new T.Vector3();
   function resize() {
     r.setSize(innerWidth, innerHeight, false);
     cam.aspect = innerWidth / innerHeight;
-    cam.fov = cam.aspect < 0.8 ? 62 : 40;
+    // narrow : 0 sur ordinateur, 1 sur téléphone en portrait ; la caméra élargit son angle et recule
+    narrow = Math.min(Math.max((1.3 - cam.aspect) / 0.8, 0), 1);
+    cam.fov = 40 + narrow * 26;
     cam.updateProjectionMatrix();
   }
   resize(); addEventListener("resize", resize);
@@ -780,6 +799,12 @@
     var pitch = (1 - e) * (1 - e) * A.b + 2 * e * (1 - e) * vb + e * e * Bw.b;
     if (!reduce) { yaw += Math.sin(t / 2500) * 0.012 - S.mx * 0.09; pitch -= S.my * 0.05; ch.rotation.y = 0.2 + Math.sin(t / 1800) * 0.18; }
     anim(t);
+    // Sur écran étroit, recule dans l'axe du regard (sans sortir de la pièce)
+    var back = (A.mb + (Bw.mb - A.mb) * e) * narrow;
+    if (back) {
+      pp.x = Math.min(Math.max(pp.x + Math.sin(yaw) * back, -5.6), 5.6);
+      pp.z = Math.min(Math.max(pp.z + Math.cos(yaw) * back, -4.6), 5.6);
+    }
     pp.z += intro * 0.6; pp.y += intro * 1.2; // arrivée douce, sans traverser le mur d’en face
     tt.set(-Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), -Math.cos(yaw) * Math.cos(pitch)).add(pp);
     cam.position.copy(pp); cam.lookAt(tt);

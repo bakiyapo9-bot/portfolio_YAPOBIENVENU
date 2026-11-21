@@ -160,6 +160,15 @@ main { position: relative; z-index: 1; }
   transform: scale(1.25);
 }
 
+/* Téléphones : boutons plus compacts, collés au bord, et texte d'aide plus petit */
+@media (max-width: 600px) {
+  .social { top: auto; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); transform: none; flex-direction: row; right: 50%; margin-right: -67px; }
+  .social a { width: 34px; height: 34px; font-size: .72rem; }
+  .dots { right: max(4px, env(safe-area-inset-right, 0px)); top: 50%; transform: translateY(-50%); gap: 7px; padding: 6px 4px; }
+  .dots button { width: 10px; height: 10px; }
+  .hint { font-size: .8rem; bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+}
+
 :focus-visible { outline: 3px solid var(--orange); outline-offset: 3px; }
 
 @media (prefers-reduced-motion: reduce) {

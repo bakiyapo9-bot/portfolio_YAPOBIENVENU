@@ -16,7 +16,7 @@ window.PORTFOLIO = {
     ["edu.IA", "Tuteur IA pour lycéens ivoiriens : cours du programme, exercices et assistant vocal Akwaba. Vainqueur du Hackathon IIT 2026.", "HTML, CSS, JavaScript, Python", "edu.ai", "#f77f00", "#c45f00"],
     ["YBSHOPING", "Boutique en ligne de baskets et sneakers.", "HTML, CSS, JavaScript", "https://ybshopping.netlify.app/", "#009e60", "#006b40"],
     ["Campus360", "Gestion universitaire : étudiants, inscriptions, notes, emplois du temps et finances.", "HTML, CSS, Bootstrap, JavaScript", "Campus360", "#1f5fbf", "#123a78"],
-    ["Calculatrice scientifique", "Application de calcul scientifique.", "", "https://calculatricescientifi.netlify.app/", "#0f7c8c", "#0a4f59"]
+    ["Calculatrice scientifique", "Calculatrice en ligne multi-mode : résolution d’équations, intégrales et statistiques.", "HTML, CSS, JavaScript", "https://calculatricescientifi.netlify.app/", "#0f7c8c", "#0a4f59"]
   ],
   acad: [
     ["Site Maserati", "Site vitrine multi-pages d’une concession fictive, avec formulaire de contact.", "HTML, CSS, Bootstrap, JavaScript", "https://maserati-site.netlify.app/", "#8a1c2b", "#4e0f19"],
