@@ -40,3 +40,5 @@ portfolio-simple/
 ## Auteur
 
 **Bienvenu Cedrick Bakary Yapo**, étudiant en génie logiciel à l'Institut Ivoirien de Technologie (Grand-Bassam).
+## VIDEO PORTFOLIO
+https://1drv.ms/v/c/9EC46120948512CE/IQCwhnoG4MP6TY1ZXk6q1CXHASJRoSgAJssoRLEhSSCE7s8?e=KzMbjy
