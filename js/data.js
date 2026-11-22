@@ -10,6 +10,11 @@ window.PORTFOLIO = {
   ville: "Grand-Bassam, Côte d’Ivoire",
   cv: "assets/docs/CV_Bienvenu_Cedrick_Bakary_Yapo.pdf",
 
+  // Mur du fond (à côté du logo) : le nom en grand, puis l'accroche
+  accroche: "Étudiant en Génie Logiciel / Informatique",
+  // Mur de droite, au-dessus de la photo
+  profil: "Étudiant en Licence 2 Génie Logiciel / Informatique, motivé et sérieux, je recherche un stage afin de mettre en pratique mes connaissances en programmation et en développement web et mobile, tout en développant mes compétences professionnelles en entreprise.",
+
   // [titre, description, technologies, lien, couleur claire, couleur foncée]
   // Lien : un nom de dépôt GitHub (« edu.ai ») ou l'adresse complète d'un site en ligne (https://…)
   perso: [

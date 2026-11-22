@@ -66,7 +66,7 @@
   /* ---------- Le salon en 3D ---------- */
   var cv = document.getElementById("gl"), r;
   try { r = new T.WebGLRenderer({ canvas: cv, antialias: true }); } catch (e) { return; }
-  r.setPixelRatio(Math.min(devicePixelRatio || 1, 1.75));
+  r.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
   r.outputEncoding = T.sRGBEncoding;
   r.toneMapping = T.ACESFilmicToneMapping;
   r.toneMappingExposure = 1.0;
@@ -118,6 +118,13 @@
   function flat(t, w, hh, x, y, z, ry) {
     // toneMapped: false : le blanc du texte reste blanc pur (le tone mapping le grisait et le rendait flou)
     return put(new T.PlaneGeometry(w, hh), new T.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, toneMapped: false }), x, y, z, { c: false, r: false, ry: ry });
+  }
+  // Texte peint sur un mur : matériau éclairé (il reçoit la lumière et les ombres de la pièce comme la peinture
+  // du mur), avec une part d'émission pour rester lisible, au lieu d'un autocollant plat et lumineux
+  function painted(t, w, hh, x, y, z, ry) {
+    var m = new T.MeshStandardMaterial({ map: t, transparent: true, depthWrite: false, roughness: 0.82, metalness: 0,
+      emissive: 0xffffff, emissiveMap: t, emissiveIntensity: 0.32, polygonOffset: true, polygonOffsetFactor: -2 });
+    return put(new T.PlaneGeometry(w, hh), m, x, y, z, { c: false, r: true, ry: ry });
   }
   var texs = [], pick = [];
 
@@ -315,27 +322,18 @@
 
   // Texte peint au centre du mur du fond, au-dessus de l'étagère
   // Ombre portée nette (petit décalage, faible flou) : le texte reste lisible sans paraître baveux
-  function crispShadow(x) { x.shadowColor = "rgba(0,0,0,.28)"; x.shadowBlur = 3; x.shadowOffsetX = 0; x.shadowOffsetY = 2; }
+  function crispShadow(x) { x.shadowColor = "rgba(0,0,0,.22)"; x.shadowBlur = 0; x.shadowOffsetX = 0; x.shadowOffsetY = 2; }
   var hi = tex(1400, 360, function (x, W, H) {
-    x.clearRect(0, 0, W, H); crispShadow(x); x.textBaseline = "alphabetic";
-    // Ligne 1 : « Je suis » + nom en doré
-    var a = "Je suis ", b = D.nom, k = 1, wa, wb;
-    do {
-      x.font = "500 " + Math.round(64 * k) + "px " + FONT; wa = x.measureText(a).width;
-      x.font = "800 " + Math.round(70 * k) + "px " + DISPLAY; wb = x.measureText(b).width;
-      k -= 0.03;
-    } while (wa + wb > W - 40 && k > 0.4);
-    k += 0.03;
-    var st0 = W / 2 - (wa + wb) / 2; x.textAlign = "left";
-    x.font = "500 " + Math.round(64 * k) + "px " + FONT; x.fillStyle = "#ffffff"; x.fillText(a, st0, 130);
-    x.font = "800 " + Math.round(70 * k) + "px " + DISPLAY; x.fillStyle = "#ffd36a"; x.fillText(b, st0 + wa, 130);
-    // Filet orange, puis ligne 2
+    x.clearRect(0, 0, W, H); crispShadow(x); x.textBaseline = "alphabetic"; x.textAlign = "center";
+    // Ligne 1 : le nom en capitales dorées ; filet orange ; ligne 2 : l'accroche
+    var nom = D.nom.toUpperCase();
+    x.fillStyle = "#ffd36a"; fit(x, nom, 800, 76, DISPLAY, W - 60); x.fillText(nom, W / 2, 130);
     x.shadowColor = "transparent"; x.fillStyle = "#f77f00"; rr(x, W / 2 - 60, 172, 120, 6, 3); x.fill(); crispShadow(x);
-    x.textAlign = "center"; x.fillStyle = "#ffffff"; fit(x, "Étudiant en Licence de Génie Logiciel", 600, 66, FONT, W - 80);
-    x.fillText("Étudiant en Licence de Génie Logiciel", W / 2, 268);
+    x.fillStyle = "#ffffff"; fit(x, D.accroche, 600, 66, FONT, W - 80);
+    x.fillText(D.accroche, W / 2, 268);
   }, 2);
   texs.push(hi);
-  flat(hi, 3.9, 1.0, 0, 5.2, -4.97, 0);
+  painted(hi, 3.9, 1.0, 0, 5.2, -4.97, 0);
 
   /* --- Mur des projets (mur de gauche) : deux catégories --- */
   // Découpe un texte en lignes de largeur « max » (au plus « n » lignes, avec … si ça dépasse)
@@ -357,7 +355,6 @@
     var t = tex(640, 480, function (x, w, hh) {
       var g = x.createLinearGradient(0, 0, w, hh); g.addColorStop(0, p[4]); g.addColorStop(1, p[5]);
       x.fillStyle = g; x.fillRect(0, 0, w, hh);
-      x.fillStyle = "rgba(255,255,255,.14)"; x.beginPath(); x.arc(w - 70, 70, 120, 0, 7); x.fill();
       x.textAlign = "left"; x.fillStyle = "#fff";
       fit(x, p[0], 800, 58, DISPLAY, w - 80);
       x.fillText(p[0], 40, 104);
@@ -387,20 +384,26 @@
     texs.push(t);
     return t;
   }
-  var ttlP = flat(goldLabel("Mes Projets", 96), 3.6, 0.7, -5.9, 5.75, -1.2, Math.PI / 2);
-  flat(goldLabel("Projets personnels", 64), 2.6, 0.5, -5.9, 4.95, -1.2, Math.PI / 2);
-  flat(goldLabel("Projets académiques", 64), 2.6, 0.5, -5.9, 2.82, -1.2, Math.PI / 2);
-  // Le mur de gauche regarde vers +x : le z décroissant va de gauche à droite, donc le 1er projet est à gauche
-  // Une rangée de cadres centrée sur z = -1.2 ; au-delà de 3 cadres, ils rétrécissent pour tenir sur le mur
-  function projRow(list, y) {
-    var n = list.length, w = n > 3 ? 1.55 : 1.9, gap = n > 3 ? 0.2 : 0.3;
+  // Deux mises en page du mur : large (ordinateur) et étroite (téléphone en portrait, 2 colonnes, cadres plus grands)
+  var wallWide = new T.Group(), wallNarrow = new T.Group(); sc.add(wallWide); sc.add(wallNarrow);
+  var lab = { t: goldLabel("Mes Projets", 96), pe: goldLabel("Projets personnels", 64), ac: goldLabel("Projets académiques", 64) };
+  function label(g, t, w, hh, y) { var m = painted(t, w, hh, -5.9, y, -1.2, Math.PI / 2); g.add(m); return m; }
+  // Le mur de gauche regarde vers +x : le z décroissant va de gauche à droite, donc le 1er projet est à gauche.
+  // Grille de cadres centrée sur z = -1.2 : « cols » colonnes, rangées espacées de « dy » vers le bas
+  function projGrid(g, list, cols, w, gap, y, dy) {
     list.forEach(function (p, k) {
-      var z = -1.2 - (k - (n - 1) / 2) * (w + gap);
-      frame(w, w * 0.7526, projTex(p), -5.93, y, z, Math.PI / 2, projUrl(p));
+      var c = k % cols, row = Math.floor(k / cols), n = Math.min(cols, list.length - row * cols);
+      var z = -1.2 - (c - (n - 1) / 2) * (w + gap);
+      g.add(frame(w, w * 0.7526, projTex(p), -5.93, y - row * dy, z, Math.PI / 2, projUrl(p)).parent);
     });
   }
-  projRow(PERSO, 3.95);
-  projRow(ACAD, 1.75);
+  var ttlP = [label(wallWide, lab.t, 3.6, 0.7, 5.75), label(wallNarrow, lab.t, 3.6, 0.7, 6.62)];
+  label(wallWide, lab.pe, 2.6, 0.5, 4.95); label(wallWide, lab.ac, 2.6, 0.5, 2.82);
+  projGrid(wallWide, PERSO, 4, PERSO.length > 3 ? 1.55 : 1.9, PERSO.length > 3 ? 0.2 : 0.3, 3.95, 0);
+  projGrid(wallWide, ACAD, 4, 1.9, 0.3, 1.75, 0);
+  label(wallNarrow, lab.pe, 2.6, 0.5, 6.1); label(wallNarrow, lab.ac, 2.6, 0.5, 2.2);
+  projGrid(wallNarrow, PERSO, 2, 2.0, 0.22, 5.05, 1.8);
+  projGrid(wallNarrow, ACAD, 2, 2.0, 0.22, 1.2, 1.8);
 
   // Canapé contre le mur du fond, à droite du bureau, avec coussins blancs (comme dans la vidéo)
   var sofa = M(0xffb000, { roughness: 0.85 }), soft = M(0xffc94d, { roughness: 0.9 }), pillow = M(0xf6f6f2, { roughness: 0.9 });
@@ -668,20 +671,16 @@
   var spot = new T.SpotLight(0xffe2b0, 0.9, 4, 0.7, 0.6); spot.position.set(5.6, 3.4, -1.8); spot.target.position.set(5.95, 2.1, -1.8);
   sc.add(spot); sc.add(spot.target);
   // Profil peint au-dessus de la photo (repris du CV), côté fauteuil jaune
-  var about = tex(1400, 470, function (x, W, H) {
+  var about = tex(1400, 530, function (x, W, H) {
     x.clearRect(0, 0, W, H); crispShadow(x); x.textAlign = "center";
     x.fillStyle = "#ffd36a"; x.font = "800 58px " + DISPLAY; x.fillText("Mon profil", W / 2, 72);
     x.shadowColor = "transparent"; x.fillStyle = "#f77f00"; rr(x, W / 2 - 50, 96, 100, 6, 3); x.fill(); crispShadow(x);
-    x.fillStyle = "#ffffff";
-    ["Motivé et sérieux, je recherche un stage",
-     "pour mettre en pratique mes connaissances en",
-     "programmation et en développement web et mobile."].forEach(function (l, k) {
-      fit(x, l, 500, 54, FONT, W - 60); x.fillText(l, W / 2, 182 + k * 76);
-    });
-    x.fillStyle = "#ffd36a"; x.font = "600 44px " + FONT; x.fillText(D.ville, W / 2, 432);
+    x.fillStyle = "#ffffff"; x.font = "500 46px " + FONT;
+    wrap(x, D.profil, W - 80, 6).forEach(function (l, k) { x.fillText(l, W / 2, 172 + k * 64); });
+    x.fillStyle = "#ffd36a"; x.font = "600 42px " + FONT; x.fillText(D.ville, W / 2, 510);
   }, 2);
   texs.push(about);
-  flat(about, 3.6, 1.21, 5.96, 3.86, -1.8, -Math.PI / 2);
+  painted(about, 3.6, 1.363, 5.96, 3.92, -1.8, -Math.PI / 2);
 
   // Poussière en suspension
   var N = 140, pa = new Float32Array(N * 3);
@@ -714,10 +713,10 @@
   }
   var WP = [];
   // Recul maximal (m) de chaque étape sur écran étroit (téléphone en portrait), pour que tout tienne dans le cadre
-  var BACK = [0.4, 4, 3, 1.4, 3.5, 0, 0, 0.25, 3];
+  var BACK = [0.4, 4, 0.8, 1.4, 3.5, 0, 0, 0.25, 3];
   WP[STEP.home] = W(V(0.4, 2.7, 5.2), V(0, 2.7, -4));                  // La maison entière
   WP[STEP.name] = W(V(-0.9, 4.5, 0.4), V(-0.9, 4.5, -5));              // Mur du fond : le nom et le médaillon
-  WP[STEP.photo] = W(V(0.4, 2.85, -1.8), V(6, 2.75, -1.8), RIGHT);     // Mur de droite : ma photo
+  WP[STEP.photo] = W(V(0.4, 2.95, -1.8), V(6, 2.95, -1.8), RIGHT);     // Mur de droite : ma photo
   WP[STEP.desk] = W(V(-0.58, 2.44, -2.72), V(-0.6, 2.4, -4.35), LEFT); // Retour au fond : face à l'écran (compétences)
   WP[STEP.projects] = W(V(2.0, 3.5, -1.2), V(-6, 3.5, -1.2), LEFT);    // Encore à gauche : le mur des projets
   // Vers la droite en repassant devant le bureau (regard baissé), puis assis dans le fauteuil
@@ -745,6 +744,10 @@
     // narrow : 0 sur ordinateur, 1 sur téléphone en portrait ; la caméra élargit son angle et recule
     narrow = Math.min(Math.max((1.3 - cam.aspect) / 0.8, 0), 1);
     cam.fov = 40 + narrow * 26;
+    // Mur des projets : grille 2 colonnes sur écran étroit, la caméra recule alors beaucoup moins
+    var small = cam.aspect < 0.85;
+    wallWide.visible = !small; wallNarrow.visible = small;
+    WP[STEP.projects].mb = small ? 0.9 : BACK[STEP.projects];
     cam.updateProjectionMatrix();
   }
   resize(); addEventListener("resize", resize);
@@ -754,7 +757,7 @@
   function hit(e) {
     m2.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
     ray.setFromCamera(m2, cam);
-    var list = pick.filter(function (o) { var z = o.userData.z || [STEP.projects - 0.4, STEP.projects + 0.4]; return S.p > z[0] && S.p < z[1]; });
+    var list = pick.filter(function (o) { for (var v = o; v; v = v.parent) if (!v.visible) return false; var z = o.userData.z || [STEP.projects - 0.4, STEP.projects + 0.4]; return S.p > z[0] && S.p < z[1]; });
     return ray.intersectObjects(list)[0] || null;
   }
   addEventListener("pointermove", function (e) {
@@ -776,7 +779,7 @@
     var tvOn = S.p > STEP.sofa - 0.3 && S.p < STEP.phone - 0.2;
     if (tvOn) { if (!tvStart) tvStart = t; tvNow = t; tvT.redraw(); }
     else if (tvStart) { tvStart = 0; tvT.redraw(); }
-    ttlP.material.opacity = reduce ? 1 : Math.max(0, 1 - Math.abs(S.p - STEP.projects) * 1.8);
+    var to = reduce ? 1 : Math.max(0, 1 - Math.abs(S.p - STEP.projects) * 1.8); ttlP.forEach(function (m) { m.material.opacity = to; });
     var ai = Math.round(S.p); if (ai !== la) { la = ai; dots.forEach(function (b, k) { b.classList.toggle("on", k === ai); }); }
     pick.forEach(function (o) {
       var f = o.userData.fr, tg = f ? o.parent : o, k = o === S.hv ? (o.userData.hs || (f ? 1.06 : 1.15)) : 1;
